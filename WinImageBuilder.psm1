@@ -5,6 +5,10 @@ $localResourcesDir = "$scriptPath\UnattendResources"
 
 . "$scriptPath\Interop.ps1"
 
+function Log($Message) {
+    Write-Host $Message
+}
+
 function CheckIsAdmin()
 {
     $wid = [System.Security.Principal.WindowsIdentity]::GetCurrent()
@@ -275,7 +279,10 @@ function New-WindowsCloudImage()
         }
         else
         {
-            $VHDPath = "{0}.vhd" -f [System.IO.Path]::GetFileNameWithoutExtension($VirtualDiskPath)
+            $VHDFolder = Split-Path $VirtualDiskPath
+            $VHDFileName = "{0}.vhd" -f [System.IO.Path]::GetFileNameWithoutExtension($VirtualDiskPath)
+            $VHDPath = Join-Path -Path $VHDFolder -ChildPath $VHDFileName
+            Log ("VHDPath: " + $VHDPath)
             if (Test-Path $VHDPath) { Remove-Item -Force $VHDPath }
         }
 
@@ -304,11 +311,19 @@ function New-WindowsCloudImage()
             }
         }
 
-        if ($VHDPath -ne $VirtualDiskPath)
+        try
         {
-            ConvertVirtualDisk $VHDPath $VirtualDiskPath $VirtualDiskFormat
+            if ($VHDPath -ne $VirtualDiskPath)
+            {
+                ConvertVirtualDisk $VHDPath $VirtualDiskPath $VirtualDiskFormat
+                Log ("Converted Virtual Disk Path: "+ $VirtualDiskPath)
+            }
+        }
+        finally
+        {
             del -Force $VHDPath
         }
+
     }
 }
 
